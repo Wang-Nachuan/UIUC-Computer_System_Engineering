@@ -1,0 +1,78 @@
+-------------------------------------------------- Check Point 1 --------------------------------------------------
+
+2021.3.6 - B1
+    State:
+        Trying to display fruit number, level and time on status bar.
+    Discription:
+        After runing program, the screen became totally black, nothing is shown.
+    Cause & Solution:
+        Segmentation fault in snprintf(), the input str should not be a string pointer
+        but a array with fixed-size, otherwise the output may excceed the allocated memory
+        and cause a segmentation fault.
+        
+2021.3.6 - B2
+    State:
+        After fixing B1.
+    Discription:
+        The maze shown in the main screen, but the status bar is still blank.
+    Cause & Solution:
+        Firstly, the index of "buf" array was wrongly calculated and the mask condition was
+        also wrong. Secondly, the color cannot be chosen arbitrarily between 0x00 to 0xFF,
+        only certain value can lead to non-black display.
+
+2021.3.7 - B1
+    State:
+        Finished the draw_masked_block and undraw_masked_block.
+    Discription:
+        The fruit dose not disappared after player touching it.
+    Cause & Solution:
+        The player is drawn in "while(ticks--)" loop, "if(dir != DIR_STOP)" condition in rtc_thread, 
+        however, there may be situations that the "if(unveil_around_player(play_x, play_y))" is 
+        excuted after the "if(dir != DIR_STOP)". In this case, although the fruit has been remove from
+        vedio memory, the buffer of old pixel will still hold the graph that contains fruit, which will
+        restored after "show_screen()" is excuted.
+        Therefore, we should move "draw_masked_block()" outsdie the loop and delete the draw condition,
+        variable. Then if the fruit is removed, the buffer will not hold it.
+
+-------------------------------------------------- Check Point 2 --------------------------------------------------
+
+2021.3.13 - B1
+    State:
+        About to create floating semi-transparent text.
+    Discription:
+        Segmentation fault, the program crashed at the very begining.
+    Cause & Solution:
+        Directly initializing a point with integer (int *a = 1). A correct way to do this is to first
+        assign it an address (int b; a=&b), then initialize it with some value.
+    
+2021.3.13 - B2
+    State:
+        After fixing B1.
+    Discription:
+        When the floating text appeared, it would create some glit
+        ch in the trace that player work through
+    Cause & Solution:
+        The order between draw/undraw player and draw/undraw text is wrong. The correct order should be, 
+        first draw player, then draw text, then undraw text, finally undraw player, otherwise the buffer
+        that holds maksed colors would not reflect the real situation.
+        Moreover, it is better to put all draw/undraw functions at the end of each loop, since during the 
+        loop some parameters may not be properly set.
+
+2021.3.15 - B1
+    State:
+        After adding tux thread to mazegame.c.
+    Discription:
+        The game cannot exit properly when "`" is pressed.
+    Cause & Solution:
+        Before stop the program we need first wake up the sleeping tux thread and kill it, otherwise the 
+        program will not stop.
+
+2021.3.15 - B2
+    State:
+        After finishing tux time display functions
+    Discription:
+        In the screen there are lots of glitches while displaying the maze.
+    Cause & Solution:
+        The glitches were caused by printk functions. In ioctl code I added some printk functions for debugging
+        issuses, but forget to mask them when testing the whole game, they kept printing things on screen
+        in a very high speed, creating a effect like glitch.

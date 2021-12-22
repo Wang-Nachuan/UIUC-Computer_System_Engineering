@@ -1,0 +1,220 @@
+==================================================
+===================== Checkpoint 1 ====================
+
+Contributer: Xiong Neng
+Date: Mar 20th 2021
+Files: test.c
+Bug: Instead of displaying the correct mask values, the test function pic_test prints straight 0s from MASTER_8259_PORT and SLAVE_8259_PORT.
+Solution: Instead of using inb() to output values from PORT, we should output MASTER/SLAVE_8259_DATA which contain the mask values.
+
+Contributer: Xiong Neng
+Date: Mar 20th 2021
+Files: lib.c
+Bug: While using printf() in test.c to output test result or desired variables, some times, the printed staff appears on top of the screen rather than the buttom. Also, the first character of the printed string is replaced by some other random characters.
+Cause: putc() use screen_y to store the y postion of the character to be displayed on the console. screen_y increment when meets '\n' or '\r'. Then if it is already the bottom, screen_y just exceed the screen and the character appears on the top.
+Solution: Added support for line feed in putc.
+
+Contributer: Wang Nachuan
+Date: Mar 20th 2021
+Files: idt.c
+Bug: After issusing an exception in test file, the system immediately crash and hence reboot repeatedly.
+Solution: The "present" field of each component in IDT is set to 0, as a result, processor did not jump to the desired position after reaching this line, causing the system to crash. The bug is solved by setting "present" field of each meaningful entry to 1.
+
+Contributer: Jiang Fengqing
+Date: Mar 21th 2021
+Files: paging.h
+Bug: When the system boot and before it run the test, it will stuck and then kill itself, gdb would say as watchdog expired.
+Solution: via breakpoint setting, the stuff happend at the code envoke the inline assembly hardware setting. Checking it, we realize that the inilization order may matter, before everything settled, it should not start page mode, or modify something after it set.
+
+Contributer: Xiong Neng
+Date: Mar 21th 2021
+Files: i8259.c
+Bug: After enabling PIC #8, rtc test_interrupts does not work, but if all PICs #0-15 are enabled, the test works as expected.
+Solution: While initializing i8259 PIC, also enable #2 which enables the slave PIC.
+
+Contributer: Bo Pan
+Date: Mar 21th 2021
+Files: keyboard.c
+Bug: After press the keyboard, a empty space will follow the letter we just typed. 
+Solution: Add a range check before we swich the scancode to asccii code to make sure those invalid scancode will not be interpreted as a empty space.
+
+Contributer: Bo Pan
+Date: Mar 21th 2021
+Files: rtc.c
+Bug: The rtc interrupt only happen once. 
+Solution: set the register c for rtc in the end of each rtc interupt to make sure the interupt can happen next time.
+
+==================================================
+===================== Checkpoint 2 ====================
+
+Contributer: Xiong Neng
+Date: Mar 27th 2021
+Files: lib.c
+Bug: The last character of a line will not be displayed since it directly goes to the next line.
+Solution: In putc() changing new line without line feed, add one situation which displays the most recent input character.
+
+Contributer: Xiong Neng
+Date: Mar 28th 2021
+Files: terminal.c
+Bug: the terminal read function does not compile for NULL pointer transfer.
+Solution: use a intermediate temp buffer to convert the pointer into int8_t * pointer, so that they are compatible.
+
+Contributer: Wang Nachuan
+Date: Mar 28th 2021
+Files: file_sys.c
+Bug: content in buffer returned by read function dose not match content in the file 
+Solution: afterwards we find that not only data blocks, bt also inode blocks does not locate continuously in memory, so we cannot make this assumption.
+
+Contributer: Pan Bo
+Date: Mar 29th 2021
+Files: rtc.c
+Bug: the frequency is inversed
+reason: for formular to compute rate is wrong, the correct version is frequency =  32768 >> (rate-1). 
+
+==================================================
+===================== Checkpoint 3 ====================
+
+Contributer: Fengqing Jiang
+Date: April 11 2021
+Files: sys_call.c
+Bug: page fault when execute system call
+Reason: the way using pointer is unsafe, for kernel stuff, must allocate the space for varible, 
+        rather than an uninitialized pointer, which may in the unallowed page region 
+
+Contributer: Fengqing Jiang
+Files: sys_call.c
+Bug: if input extra space at the end of the args, it will fail to execute
+Reason: _parse_cmd_ did not handle the args correctly,since use wrong end function to handle space at end of the args
+
+Contributer: Fengqing Jiang
+Files: sys_call.c
+Bug: it could not execute any sub-program in shell, and Page Fault
+Reason: the shortcut calculate function was incorrect with brackets， then it leads to strange address, then Page Fault
+
+Contributer: Fengqing Jiang
+Files: sys_call.c
+Bug: when test nested shell to 6 level shell, and go to 7th shell, it will fail but also return no such file.
+Reason: the return value should be different from simple fail (-1), otherwise would be regard as no such file by the shell program.
+ 
+Contributer: Nachuan Wang
+Date: April 11 2021
+Files: sys_call.c
+Bug: after shell is excuted, the prompt cannot respond to any key press
+Reason: system call is set to be an interrupt gate, so before entering to actual fucntions we need to first restore the IF 
+        in EFLAGE register, otherwise all interrupt (like key press) will be suppressed.
+
+Contributer: Nachuan Wang
+Date: April 11 2021
+Files: sys_call.c
+Bug: read file "." does not fill the buffer with any character
+Reason: when initializing file operation jump table, we use a "switch", however, we hadn't realized that C will continue to 
+        excute remaining switch cases after finishing the first case. Consequently, the jump table is initialized in a wrong 
+        way. After adding "break" at each case the error is fixed.
+
+Contributer: Nachuan Wang
+Date: April 12 2021
+Files: sys_call.c
+Bug: after an exception is issued, "shell" does not print any information
+Reason: at the end of "excute" system call, just after code jumping from "halt", we use a "return success" to return, wh
+        ich will rewrite the return value in EAX. Therefore, we use a variable to store the value in EAX in assembly code and 
+        return it instead.
+
+==================================================
+===================== Checkpoint 4 ====================
+
+Contributer: Bo Pan
+Date: April 17 2021
+Files: sys_call.c
+Bug: when running "grep", the function did not stop
+Reason: in "open" function, we did not call specific type of open function for each file. Normally it has no effect on other 
+        program since most open just return 0 and do nothing. An exception is that rtc_open will initialize the frequency of 
+        rtc, so if we do not initialize it at open time, calling read_rtc may cause the function to fall into infinit loops.
+
+Contributer: Bo Pan
+Date: April 17 2021
+Files: page.c
+Bug: page fault when running fish
+Reason: forget to set the DPL in page dictionary to 3
+
+Contributer: Bo Pan
+Date: April 17 2021
+Files: rtc.c
+Bug: in infinite while loop after the first frame of fish is added
+Reason: did not set the counter of virtualized rtc to MAX_FREQ when we start a new rtc_read. If we swich freqecent (using write), 
+this may cause our counter never reach 0.
+
+==================================================
+===================== Checkpoint 5 ====================
+Contributer: Bo Pan
+Date: April 24 2021
+Files: rtc.c
+Bug: when we modify rtc.c to make rtc support schedule, we are stucked in the first frame of the fish
+Reason: we need to make sure at the end we still enable the rtc chip at the end of the loop
+
+
+Contributer: Jiang Fengqing
+Date: April 24  2021
+Files: scheduler.c
+Bug: When it tend to schedule the tasks, it will raise page fault
+Reason: Forget to turn the back-up video page (from 0xB9000-0x0xBB000). Turn on these entry solve the problem.
+
+Contributer: Xiong Neng
+Date: April 24 2021
+Files: terminal.c
+Bug: While inputing throught keyboard, some times the characters appear on other terminals but not the displayed one.
+Solution: This is happening when the displayed terminal is different to the current active one. Solution is to implement a new method of displaying by first change on page table the video memory to the physical memory 0xB8000, then temporarily change terminal_tick to terminal_display, finally display the desired character through putc(). After the procedure, we also need to change paging table and terminal_tick back.
+
+Contributer: Xiong Neng
+Date: April 25 2021
+Files: terminal.c
+Bug: After inputing a command and pressed enter, the output of the command being ran may appear on another terminal other than the one which we input the command to.
+Solution: This is happening because when we hit the enter key, terminal_tick may be different to terminal_display. Then the command will be ran on terminal_tick. To fix this, we check whether terminal_tick is equal to terminal_display the same time we check enter_flag.
+
+Contributer: Jiang Fengqing
+Date: April 26  2021
+Files: scheduler.c
+Bug: When it tend to switch the terminal by function key, the screen is mass.
+Reason: Using incorrect method to change the video memory, the virtual address mapping has something wrong. Reorganize the stuff here solve the problem.
+
+Contributer: Jiang Fengqing
+Date: April 26  2021
+Files: scheduler.c
+Bug: When halt, it will give unexpected information indicating that the root shell is tending to be exited.
+Reason: Using incorrect condition for the case with no scheduler. Update the conditon for the scheduler case solve the problem.
+
+Contributer: Nachuan Wang
+Date: April 26 2021
+Files: sys_calls.c
+Bug: While halting a program, the function go through "return" in function excute two times.
+Reason: We make context switch a individual function, so calling it will leave a return address in kernel stack, however the function does not return properly, instead it simply switched to user level, leaving the return address un-poped. Consequently, after we jumped from halt to the end of "excute" function, we first popped that return address and jump to the location after context switch function is called, then we went through "return" again. To fix this proble, we simply replace  context switch function with context switch micro.
+
+Contributer: Nachuan Wang
+Date: April 27 2021
+Files: sys_calls.c/scheduler.c
+Bug: Halting any user program causes page fault
+Reason: We incorrectly use the same field in pcb to store ebp/esp value under "switch to user level" and "switch to different terminal" situations, it is not true because those are two different contexts so their ebp/esp are different. To fix it we use different fields to store ebp/esp in two situations.
+
+Contributer: Xiong Neng
+Date: April 28 2021
+Files: terminal.c, scheduler.c
+Bug: While running counter on one terminal and inputing throught keyboard on another terminal, some times the characters are not displayed. Spaces take their places.
+Solution: This is happening because after we change the page table mapping, we do not flush the tle. This cause the changing of the page mapping invalid sometimes. To fix this we just call TLB_flush() everytime after we change page mappings.
+
+Contributer: Xiong Neng
+Date: April 30 2021
+Files: terminal.c
+Bug: In the shell console, when keep pressing enter, sometimes it skips some rows.
+Solution: Before handling '\r', '\n', check if enter flag is already ON.
+
+
+Contributer: Jiang Fengqing
+Date: May 2  2021
+Files: timer.c && timer.h
+Bug: When intending to test change the piece period, the time did not really changes. And testing on the windows machine, would have a bit lag than on the Max amchine.
+Solution: Wrong formula to calculate the frequency divider. And refer to the code from the devos website, change a different way to set the divider. Then it works fine.
+
+Contributer: Jiang Fengqing
+Date: May 2  2021
+Files: paging.c
+Bug: When open several fish, it may have page fault when restore the user video memory.
+Solution: using incorrect method to determine if it should close the page. Only using user vid page task could affect, a simple counter can not work.

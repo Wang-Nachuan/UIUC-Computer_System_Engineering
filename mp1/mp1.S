@@ -226,7 +226,7 @@ mp1_ioctl_add:
         pushl   %eax            # Push n
         movl    8(%ebp), %eax
         pushl   %eax            # Push *from
-        movl    -16(%ebp), %eaxhalt
+        movl    -16(%ebp), %eax # halt
         pushl   %eax            # Push *to
         # 2. Make the call
         call    mp1_copy_from_user
